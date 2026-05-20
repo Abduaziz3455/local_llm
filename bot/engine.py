@@ -61,7 +61,11 @@ async def stream_reply(
     try:
         async with ChatActionSender.typing(bot=bot, chat_id=chat_id):
             async for delta in client.stream_chat(
-                model, conversation, web_search=web_search, file_ids=file_ids
+                model,
+                conversation,
+                web_search=web_search,
+                file_ids=file_ids,
+                chat_id=f"local:telegram-{chat_id}",
             ):
                 accumulated += delta
                 now = time.monotonic()

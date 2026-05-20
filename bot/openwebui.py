@@ -53,16 +53,24 @@ class OpenWebUIClient:
         *,
         web_search: bool = False,
         file_ids: Iterable[str] | None = None,
+        chat_id: str = "local:telegram",
     ) -> AsyncIterator[str]:
         """Stream a chat completion, yielding text deltas as they arrive.
 
         ``web_search`` toggles Open WebUI's search tool for this request;
         ``file_ids`` attaches previously uploaded files for RAG.
+
+        ``chat_id`` must be sent: Open WebUI's payload processing calls
+        ``metadata['chat_id'].startswith(...)`` unconditionally, so a missing
+        id becomes ``None`` and 400s the request. The ``local:`` prefix marks
+        a temporary chat Open WebUI won't persist — the bot keeps its own
+        history — and satisfies those guards.
         """
         payload: dict = {
             "model": model,
             "messages": list(messages),
             "stream": True,
+            "chat_id": chat_id,
         }
         if web_search:
             payload["features"] = {"web_search": True}
@@ -105,11 +113,12 @@ class OpenWebUIClient:
         *,
         web_search: bool = False,
         file_ids: Iterable[str] | None = None,
+        chat_id: str = "local:telegram",
     ) -> str:
         """Non-streaming convenience wrapper — accumulates the full reply."""
         parts: list[str] = []
         async for delta in self.stream_chat(
-            model, messages, web_search=web_search, file_ids=file_ids
+            model, messages, web_search=web_search, file_ids=file_ids, chat_id=chat_id
         ):
             parts.append(delta)
         return "".join(parts)

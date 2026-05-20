@@ -48,7 +48,10 @@ async def handle_guest(
 
     try:
         answer = await client.complete_chat(
-            model, conversation, web_search=True
+            model,
+            conversation,
+            web_search=True,
+            chat_id=f"local:telegram-guest-{message.chat.id}",
         )
         answer = visible_so_far(answer) or "The model returned an empty answer."
     except OpenWebUIError as exc:
