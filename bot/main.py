@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import (
@@ -38,6 +40,18 @@ _ADMIN_COMMANDS = [
 ]
 
 
+async def _heartbeat(path: Path, interval: float = 30.0) -> None:
+    """Touch ``path`` periodically so the container healthcheck can detect a
+    hung event loop (the file's mtime stops advancing if polling stalls)."""
+    while True:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(str(time.time()))
+        except OSError as exc:  # non-fatal — never let the heartbeat crash polling
+            log.warning("Could not write heartbeat file: %s", exc)
+        await asyncio.sleep(interval)
+
+
 async def _setup_commands(bot: Bot, admin_user_id: int) -> None:
     """Publish the command menu to the admin only, and clear it for everyone else."""
     await bot.set_my_commands(
@@ -57,7 +71,11 @@ async def main() -> None:
     bot = Bot(token=config.bot_token)
     dp = Dispatcher()
 
-    db = Database(config.db_path)
+    db = Database(
+        config.db_path,
+        max_stored_messages=config.max_stored_messages,
+        file_ttl_hours=config.file_ttl_hours,
+    )
     await db.connect()
     client = OpenWebUIClient(
         config.openwebui_url, config.openwebui_api_key, config.request_timeout
@@ -109,6 +127,9 @@ async def main() -> None:
     dp.include_router(dm.router)
     dp.include_router(guest.router)
 
+    heartbeat = asyncio.create_task(
+        _heartbeat(Path(config.db_path).with_name("heartbeat"))
+    )
     try:
         await dp.start_polling(
             bot,
@@ -119,6 +140,7 @@ async def main() -> None:
             allowed_updates=["message", "guest_message"],
         )
     finally:
+        heartbeat.cancel()
         await db.close()
         await client.aclose()
         await bot.session.close()

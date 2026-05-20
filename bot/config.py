@@ -35,6 +35,8 @@ class Config:
     db_path: str
     history_turns: int          # how many past user+assistant messages to replay in DMs
     request_timeout: float      # seconds — generous; a 9B can be slow
+    file_ttl_hours: float       # how long an uploaded doc stays attached for RAG
+    max_stored_messages: int    # cap on stored messages per chat (older ones pruned)
 
 
 def load_config() -> Config:
@@ -48,4 +50,6 @@ def load_config() -> Config:
         db_path=os.getenv("BOT_DB_PATH", "/data/bot.db"),
         history_turns=int(os.getenv("HISTORY_TURNS", "12")),
         request_timeout=float(os.getenv("REQUEST_TIMEOUT", "180")),
+        file_ttl_hours=float(os.getenv("FILE_TTL_HOURS", "24")),
+        max_stored_messages=int(os.getenv("MAX_STORED_MESSAGES", "200")),
     )

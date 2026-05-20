@@ -1,0 +1,14 @@
+# Keep the build context small and the image clean.
+.git
+.gitignore
+.env
+.env.example
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+*.md

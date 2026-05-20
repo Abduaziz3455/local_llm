@@ -14,4 +14,9 @@ COPY bot/ ./bot/
 ENV BOT_DB_PATH=/data/bot.db
 VOLUME ["/data"]
 
+# Liveness: the bot touches /data/heartbeat every 30s. If polling hangs, the
+# file goes stale and Docker restarts the container (restart: unless-stopped).
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import os,time,sys; f='/data/heartbeat'; sys.exit(0 if os.path.exists(f) and time.time()-os.path.getmtime(f) < 150 else 1)"
+
 CMD ["python", "-m", "bot.main"]

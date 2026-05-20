@@ -46,14 +46,30 @@ class ChatSettings:
 
 
 class Database:
-    def __init__(self, path: str) -> None:
+    def __init__(
+        self,
+        path: str,
+        *,
+        max_stored_messages: int = 200,
+        file_ttl_hours: float = 24.0,
+    ) -> None:
         self._path = path
         self._db: aiosqlite.Connection | None = None
+        # Keep at most this many messages per chat; older ones are pruned on
+        # every insert so the table can't grow without bound over months.
+        self._max_messages = max(max_stored_messages, 1)
+        # Uploaded docs stop being attached for RAG after this many hours.
+        self._file_ttl = max(file_ttl_hours, 0.0) * 3600.0
 
     async def connect(self) -> None:
         self._db = await aiosqlite.connect(self._path)
+        # WAL keeps reads and writes from blocking each other and is more
+        # crash-resilient — worth it for a process that runs 24/7.
+        await self._db.execute("PRAGMA journal_mode=WAL")
         await self._db.executescript(_SCHEMA)
         await self._db.commit()
+        # Drop any files that already expired while the bot was offline.
+        await self._prune_expired_files()
 
     async def close(self) -> None:
         if self._db is not None:
@@ -71,6 +87,13 @@ class Database:
         await self._conn.execute(
             "INSERT INTO messages (chat_id, role, content, ts) VALUES (?, ?, ?, ?)",
             (chat_id, role, content, time.time()),
+        )
+        # Keep only the most recent N messages for this chat (by rowid, which
+        # is unique even if two messages share a timestamp).
+        await self._conn.execute(
+            "DELETE FROM messages WHERE chat_id = ? AND rowid NOT IN ("
+            "SELECT rowid FROM messages WHERE chat_id = ? ORDER BY ts DESC LIMIT ?)",
+            (chat_id, chat_id, self._max_messages),
         )
         await self._conn.commit()
 
@@ -122,6 +145,21 @@ class Database:
 
     # --- attached files (RAG) ------------------------------------------------
 
+    def _file_cutoff(self) -> float:
+        """Timestamp before which an uploaded file is considered expired.
+
+        Returns 0.0 (i.e. never expire) when the TTL is disabled.
+        """
+        return time.time() - self._file_ttl if self._file_ttl > 0 else 0.0
+
+    async def _prune_expired_files(self) -> None:
+        """Delete file rows older than the TTL so old docs stop being attached."""
+        cutoff = self._file_cutoff()
+        if cutoff <= 0:
+            return
+        await self._conn.execute("DELETE FROM chat_files WHERE ts < ?", (cutoff,))
+        await self._conn.commit()
+
     async def add_file(self, chat_id: int, file_id: str, filename: str) -> None:
         await self._conn.execute(
             "INSERT INTO chat_files (chat_id, file_id, filename, ts) "
@@ -129,20 +167,25 @@ class Database:
             (chat_id, file_id, filename, time.time()),
         )
         await self._conn.commit()
+        # Opportunistically clear out anything that has aged out.
+        await self._prune_expired_files()
 
     async def get_file_ids(self, chat_id: int) -> list[str]:
+        """Return ids of files still within the TTL window, oldest first."""
         async with self._conn.execute(
-            "SELECT file_id FROM chat_files WHERE chat_id = ? ORDER BY ts",
-            (chat_id,),
+            "SELECT file_id FROM chat_files WHERE chat_id = ? AND ts >= ? "
+            "ORDER BY ts",
+            (chat_id, self._file_cutoff()),
         ) as cur:
             rows = await cur.fetchall()
         return [r[0] for r in rows]
 
     async def list_files(self, chat_id: int) -> list[str]:
-        """Return attached file names, oldest first."""
+        """Return names of files still within the TTL window, oldest first."""
         async with self._conn.execute(
-            "SELECT filename FROM chat_files WHERE chat_id = ? ORDER BY ts",
-            (chat_id,),
+            "SELECT filename FROM chat_files WHERE chat_id = ? AND ts >= ? "
+            "ORDER BY ts",
+            (chat_id, self._file_cutoff()),
         ) as cur:
             rows = await cur.fetchall()
         return [r[0] for r in rows]

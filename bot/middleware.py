@@ -39,6 +39,24 @@ class ThrottlingMiddleware(BaseMiddleware):
         self._window = window
         self._hits: dict[int, deque[float]] = defaultdict(deque)
         self._warned: dict[int, float] = {}
+        self._last_sweep = 0.0
+
+    def _sweep(self, now: float) -> None:
+        """Drop bookkeeping for users idle longer than the window.
+
+        Without this, every distinct sender (including strangers who only ever
+        message once) would leave a permanent dict entry — an unbounded leak
+        for a process that runs for months.
+        """
+        for uid in list(self._hits):
+            hits = self._hits[uid]
+            while hits and now - hits[0] > self._window:
+                hits.popleft()
+            if not hits:
+                del self._hits[uid]
+        for uid in list(self._warned):
+            if now - self._warned[uid] > self._window:
+                del self._warned[uid]
 
     async def __call__(
         self,
@@ -51,6 +69,10 @@ class ThrottlingMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         now = time.monotonic()
+        if now - self._last_sweep > self._window:
+            self._sweep(now)
+            self._last_sweep = now
+
         hits = self._hits[user.id]
         while hits and now - hits[0] > self._window:
             hits.popleft()
