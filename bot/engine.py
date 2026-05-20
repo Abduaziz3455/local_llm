@@ -79,6 +79,7 @@ async def stream_reply(
     accumulated = ""
     last_edit = 0.0
     last_shown = placeholder.text or ""
+    stats: dict = {}
 
     try:
         async with ChatActionSender.typing(bot=bot, chat_id=chat_id):
@@ -88,6 +89,7 @@ async def stream_reply(
                 web_search=web_search,
                 file_ids=file_ids,
                 chat_id=f"local:telegram-{chat_id}",
+                stats=stats,
             ):
                 accumulated += delta
                 now = time.monotonic()
@@ -109,6 +111,15 @@ async def stream_reply(
     if not final:
         await safe_edit(placeholder, "⚠️ The model returned an empty answer.")
         return None
+
+    # The model stopped because it ran out of room (context window full), not
+    # because it finished — flag it so the user isn't left with a sentence that
+    # just trails off mid-word.
+    if stats.get("finish_reason") == "length":
+        final += (
+            "\n\n_⚠️ Reply cut off — the model hit its length limit. "
+            "Send “continue” to get the rest, or /reset to free up context._"
+        )
 
     # Split on plain text (visible-length boundaries), then format each chunk.
     chunks = split_for_telegram(final)

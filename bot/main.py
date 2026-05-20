@@ -18,7 +18,7 @@ from aiogram.types import (
 from bot.config import load_config
 from bot.db import Database
 from bot.handlers import commands, dm, guest, tools
-from bot.middleware import AdminOnlyMiddleware
+from bot.middleware import AdminOnlyMiddleware, ThrottlingMiddleware
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 
 log = logging.getLogger("bot")
@@ -93,7 +93,12 @@ async def main() -> None:
     except OpenWebUIError as exc:
         log.warning("Open WebUI not reachable at startup: %s", exc)
 
-    # Admin-only gate on both message and guest-message updates.
+    # Flood control first (sheds bursts before the gate would reply to them),
+    # then the admin-only gate — both on message and guest-message updates.
+    flood = ThrottlingMiddleware()
+    dp.message.outer_middleware(flood)
+    dp.guest_message.outer_middleware(flood)
+
     gate = AdminOnlyMiddleware(config.admin_user_id)
     dp.message.outer_middleware(gate)
     dp.guest_message.outer_middleware(gate)

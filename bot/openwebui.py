@@ -54,11 +54,16 @@ class OpenWebUIClient:
         web_search: bool = False,
         file_ids: Iterable[str] | None = None,
         chat_id: str = "local:telegram",
+        stats: dict | None = None,
     ) -> AsyncIterator[str]:
         """Stream a chat completion, yielding text deltas as they arrive.
 
         ``web_search`` toggles Open WebUI's search tool for this request;
         ``file_ids`` attaches previously uploaded files for RAG.
+
+        If ``stats`` is given, the final chunk's ``finish_reason`` is written
+        to ``stats["finish_reason"]`` — callers use this to tell a complete
+        answer apart from one the model cut short (``"length"``).
 
         ``chat_id`` must be sent: Open WebUI's payload processing calls
         ``metadata['chat_id'].startswith(...)`` unconditionally, so a missing
@@ -99,6 +104,8 @@ class OpenWebUIClient:
                     choices = chunk.get("choices") or []
                     if not choices:
                         continue
+                    if stats is not None and choices[0].get("finish_reason"):
+                        stats["finish_reason"] = choices[0]["finish_reason"]
                     delta = choices[0].get("delta", {})
                     content = delta.get("content")
                     if content:
