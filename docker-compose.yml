@@ -80,6 +80,7 @@ services:
       - ENABLE_OLLAMA_API=false      # we don't use Ollama; stops failed probes
       # --- Convenience ---
       - WEBUI_AUTH=false             # single-user, no login screen. Remove for multi-user.
+      - ENABLE_API_KEY=true          # let the Telegram bot authenticate with a bearer key
       - DEFAULT_LOCALE=en            # default UI language (per-user override in Settings > General)
       - ENABLE_WEB_SEARCH=true       # DuckDuckGo needs no API key
       - WEB_SEARCH_ENGINE=duckduckgo
@@ -93,5 +94,23 @@ services:
               count: all
               capabilities: [gpu]
 
+  # ---------------------------------------------------------------------------
+  #  Telegram assistant bot — long-polling, no exposed ports. Talks to Open WebUI
+  #  over the internal Docker network. Settings come from .env (see bot vars).
+  # ---------------------------------------------------------------------------
+  bot:
+    build:
+      context: .                     # repo root: Dockerfile copies requirements.txt + bot/
+      dockerfile: bot/Dockerfile
+    container_name: telegram-bot
+    restart: unless-stopped
+    depends_on:
+      - open-webui
+    env_file:
+      - .env                         # TELEGRAM_BOT_TOKEN, ADMIN_USER_ID, OPENWEBUI_API_KEY, …
+    volumes:
+      - bot-data:/data               # SQLite chat history & per-chat settings
+
 volumes:
   openwebui-data:
+  bot-data:

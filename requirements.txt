@@ -1,0 +1,5 @@
+# Telegram assistant bot dependencies
+aiogram>=3.28.2      # Bot API 10.0 — guest mode (guest_message, answerGuestQuery)
+httpx>=0.27          # async HTTP client for the Open WebUI API
+aiosqlite>=0.20      # async SQLite — per-chat history & mode
+python-dotenv>=1.0   # load .env when running outside Docker

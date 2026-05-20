@@ -7,12 +7,14 @@ runs on your machine — no API keys, works offline after the first image pull.
 ## Files
 
 ```
-docker-compose.yml   # the stack
-.env                 # all settings: ports, model, cache path
+docker-compose.yml   # the stack (llama.cpp + Open WebUI + Telegram bot)
+.env                 # all settings: ports, model, cache path, bot config
 README.md            # this file
+requirements.txt     # Python deps for the Telegram bot
+bot/                 # Telegram assistant bot source
 ```
 
-Put all three in the same folder.
+Keep `docker-compose.yml`, `.env` and `README.md` in the same folder.
 
 ---
 
@@ -166,10 +168,83 @@ Admin Panel → Settings → Web Search, or set a keyed provider like Tavily.
 
 ---
 
+## Telegram assistant bot
+
+A personal Telegram assistant backed by this local stack. It runs as the `bot`
+service in the compose file and answers **only you** — anywhere on Telegram.
+
+**Two ways to reach it:**
+- **Direct DM** — a normal 1-1 chat with the bot. Keeps conversation memory, has
+  commands, uses web search.
+- **Guest Mode** — `@mention` the bot's username in *any* group or chat and it
+  replies once, even though it isn't a member. Guest replies are stateless: one
+  question, one answer, no memory (a Telegram limitation, not a bug).
+
+### One-time setup
+
+1. **Create the bot.** Message [@BotFather](https://t.me/BotFather) → `/newbot`,
+   copy the token into `TELEGRAM_BOT_TOKEN` in `.env`.
+2. **Enable Guest Mode.** In BotFather, open the bot's settings MiniApp and turn
+   on **Guest Mode** (so `@mention` works in any chat).
+3. **Find your user id.** Message [@userinfobot](https://t.me/userinfobot), copy
+   the number into `ADMIN_USER_ID`. The bot ignores everyone else.
+4. **Create the two model entries** in Open WebUI → **Workspace → Models**
+   (see *Thinking mode* above). Name them so their ids match `MODEL_FAST` and
+   `MODEL_THINKING` in `.env` (default `qwen-fast` / `qwen-thinking`). Enable web
+   search on them, or the bot still works without it.
+5. **Generate an API key.** Open WebUI → **Settings → Account → API keys** →
+   create one, copy it into `OPENWEBUI_API_KEY`.
+
+### Run
+
+```bash
+docker compose up -d           # starts llama + open-webui + bot
+docker compose logs -f bot     # watch the bot; it logs which models it found
+```
+
+DM the bot `/start` to confirm it's alive.
+
+### Using it
+
+- **Ask anything** in DM — it answers with web search and remembers the chat.
+- **Model flag:** add `/think` (or `!t`) anywhere in a message for the slower
+  reasoning model; `/fast` (`!f`) forces the quick one. Put the flag at the end.
+- **Tools** — reply to a message with one of these, or pass text inline:
+  `/summarize` (text or URL), `/translate <language>`, `/rewrite <style>`.
+- **Chat with a document** — send a PDF/text file to the bot; once it says the
+  file is ready, ask questions about it. `/files` lists them, `/files clear`
+  removes them.
+- **Voice messages** — send a voice message or audio file; the bot transcribes
+  it with Open WebUI's speech-to-text and answers it as a question.
+- **Commands:** `/mode think|fast` (default model), `/web on|off` (web search),
+  `/files` (attached docs), `/reset` (forget history), `/status` (backend
+  health), `/help`.
+- **Guest mode:** in any chat, type `@yourbotname <question>` → one reply.
+
+### Bot errors
+
+**Bot replies "model unavailable"** — Open WebUI or `llama` is down, or the model
+is still loading. Check `docker compose logs -f open-webui llama`.
+
+**`/status` shows "not found" for a model** — the `MODEL_FAST` / `MODEL_THINKING`
+ids in `.env` don't match the model-entry ids in Open WebUI. Fix the names.
+
+**Guest `@mention` does nothing** — Guest Mode isn't enabled in BotFather, or you
+mentioned it from a non-admin account (the bot stays silent for everyone else).
+
+**Voice transcription fails** — Open WebUI's speech-to-text engine isn't ready.
+Check Admin Panel → Settings → Audio (the local Whisper engine works out of the
+box; the first transcription downloads its model).
+
+**`Missing required environment variable`** — fill in `TELEGRAM_BOT_TOKEN`,
+`ADMIN_USER_ID` and `OPENWEBUI_API_KEY` in `.env`, then `docker compose up -d`.
+
+---
+
 ## Stop / reset
 
 ```bash
 docker compose down              # stop
-docker compose down -v           # stop + delete chats/settings (the open-webui volume)
+docker compose down -v           # stop + delete all data (open-webui + bot history volumes)
 docker compose pull && docker compose up -d   # update to latest images
 ```
