@@ -17,7 +17,7 @@ from aiogram.types import (
 )
 
 from bot.config import Config
-from bot.formatting import TELEGRAM_LIMIT, visible_so_far
+from bot.formatting import TELEGRAM_LIMIT, render_html, visible_so_far
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 from bot.prompts import system_prompt
 from bot.routing import model_id, route
@@ -64,6 +64,9 @@ async def handle_guest(
         id="answer",
         title="Assistant answer",
         description=answer[:120],
-        input_message_content=InputTextMessageContent(message_text=answer),
+        input_message_content=InputTextMessageContent(
+            message_text=render_html(answer),
+            parse_mode="HTML",
+        ),
     )
     await message.answer_guest_query(result=result)

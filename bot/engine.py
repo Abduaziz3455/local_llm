@@ -14,7 +14,12 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
 
-from bot.formatting import TELEGRAM_LIMIT, split_for_telegram, visible_so_far
+from bot.formatting import (
+    TELEGRAM_LIMIT,
+    render_html,
+    split_for_telegram,
+    visible_so_far,
+)
 from bot.openwebui import Message as ChatMessage
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 
@@ -27,13 +32,30 @@ def thinking_label(thinking: bool) -> str:
 
 
 async def safe_edit(message: Message, text: str) -> None:
-    """Edit a message, ignoring 'not modified' / transient Telegram errors."""
+    """Edit a message with plain text, ignoring transient Telegram errors."""
     if not text:
         return
     try:
         await message.edit_text(text[:TELEGRAM_LIMIT])
     except TelegramBadRequest:
         pass
+
+
+async def _send_html(send, plain: str) -> None:
+    """Render ``plain`` as Telegram HTML via ``send`` (edit_text / answer).
+
+    Falls back to the unformatted text if Telegram rejects the markup, so a
+    bad conversion degrades gracefully instead of dropping the reply.
+    """
+    if not plain:
+        return
+    try:
+        await send(render_html(plain), parse_mode="HTML")
+    except TelegramBadRequest:
+        try:
+            await send(plain[:TELEGRAM_LIMIT])
+        except TelegramBadRequest:
+            pass
 
 
 async def stream_reply(
@@ -88,8 +110,9 @@ async def stream_reply(
         await safe_edit(placeholder, "⚠️ The model returned an empty answer.")
         return None
 
+    # Split on plain text (visible-length boundaries), then format each chunk.
     chunks = split_for_telegram(final)
-    await safe_edit(placeholder, chunks[0])
+    await _send_html(placeholder.edit_text, chunks[0])
     for chunk in chunks[1:]:
-        await reply_to.answer(chunk)
+        await _send_html(reply_to.answer, chunk)
     return final
