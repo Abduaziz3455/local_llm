@@ -23,6 +23,17 @@ services:
     image: ghcr.io/ggml-org/llama.cpp:server-cuda   # [CPU] -> ghcr.io/ggml-org/llama.cpp:server
     container_name: llama
     restart: unless-stopped
+    # Cap log size so it can't fill the disk during long-running 24/7 use.
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    # Reports healthy once the model is loaded and the server can serve.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 180s   # model load can take minutes — don't fail during it
     ports:
       - "${LLAMA_PORT:-8080}:8080"     # host port from .env; container port stays 8080
     volumes:
@@ -68,8 +79,18 @@ services:
     image: ghcr.io/open-webui/open-webui:cuda   # [CPU] -> ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     depends_on:
-      - llama
+      llama:
+        condition: service_healthy   # wait until the model is actually loaded
     ports:
       - "${WEBUI_PORT:-3000}:8080"     # host port from .env; container port stays 8080
     environment:
@@ -104,8 +125,12 @@ services:
       dockerfile: bot/Dockerfile
     container_name: telegram-bot
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     depends_on:
-      - open-webui
+      open-webui:
+        condition: service_healthy
     env_file:
       - .env                         # TELEGRAM_BOT_TOKEN, ADMIN_USER_ID, OPENWEBUI_API_KEY, …
     volumes:
