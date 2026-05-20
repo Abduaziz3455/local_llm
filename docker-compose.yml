@@ -80,6 +80,7 @@ services:
       - ENABLE_OLLAMA_API=false      # we don't use Ollama; stops failed probes
       # --- Convenience ---
       - WEBUI_AUTH=false             # single-user, no login screen. Remove for multi-user.
+      - DEFAULT_LOCALE=en            # default UI language (per-user override in Settings > General)
       - ENABLE_WEB_SEARCH=true       # DuckDuckGo needs no API key
       - WEB_SEARCH_ENGINE=duckduckgo
     volumes:
