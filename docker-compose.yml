@@ -1,0 +1,89 @@
+# =============================================================================
+#  Qwen3.5-9B (GGUF) + Open WebUI  —  single-file local stack
+# -----------------------------------------------------------------------------
+#  Start:      docker compose up -d
+#  Dashboard:  http://localhost:3000    (or WEBUI_PORT set in .env)
+#  Raw API:    http://localhost:8080/v1 (or LLAMA_PORT set in .env) — OpenAI-compatible
+#  Stop:       docker compose down
+#
+#  All settings (ports, model, cache path) live in the .env file next to this
+#  compose file. docker compose reads it automatically.
+#
+#  Defaults to an NVIDIA GPU. CPU-only? Make the 2 changes marked  [CPU]  below.
+#
+#  SWITCH MODELS (any GGUF you've downloaded into the HF cache):
+#    Just point MODEL_REPO at the new folder name, e.g.:
+#       MODEL_REPO=models--unsloth--Qwen3.6-27B-GGUF docker compose up -d
+#    ...or edit the default in the 'llama' command below. If a repo holds
+#    several quants, also set QUANT (e.g. QUANT=UD-Q4_K_XL) to pick one.
+# =============================================================================
+
+services:
+  llama:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda   # [CPU] -> ghcr.io/ggml-org/llama.cpp:server
+    container_name: llama
+    restart: unless-stopped
+    ports:
+      - "${LLAMA_PORT:-8080}:8080"     # host port from .env; container port stays 8080
+    volumes:
+      # Mount the WHOLE HuggingFace hub cache read-only, so any model you
+      # download later is visible. Override the location with HF_HUB if needed.
+      - ${HF_HUB:-/home/abduaziz/.cache/huggingface/hub}:/hub:ro
+    # Picks the .gguf from the selected model folder (any snapshot hash),
+    # skips the vision "mmproj" file, then starts the server.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        REPO="${MODEL_REPO:-models--unsloth--Qwen3.5-9B-GGUF}"
+        MODEL=$$(find "/hub/$$REPO" -iname "*${QUANT:-}*.gguf" | grep -vi mmproj | sort | head -n1)
+        if [ -z "$$MODEL" ]; then echo "No .gguf found under /hub/$$REPO"; exit 1; fi
+        echo "==> Loading model: $$MODEL"
+        exec /app/llama-server \
+          -m "$$MODEL" \
+          --host 0.0.0.0 --port 8080 \
+          --alias local-llm \
+          --api-key local \
+          -c 16384 \
+          -ngl 99 \
+          -fa on \
+          --jinja \
+          --chat-template-kwargs '{"enable_thinking":false}' \
+          --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --presence-penalty 1.5
+        # Thinking is NOT forced here — control it from the dashboard (see README).
+        # Qwen3.5 9B defaults thinking OFF. In Open WebUI, set a model's parameter
+        #   chat_template_kwargs = {"enable_thinking": true}   to turn it on.
+        # Sampling above is Qwen's thinking preset; override per model in the dashboard
+        # (use temp 0.7 / top-p 0.8 for a non-thinking "fast" variant).
+        # If the 9B falls into thinking loops, lower --temp to 0.6. Raise -c toward 262144 if you can.
+    deploy:                          # [CPU] delete this entire 'deploy:' block
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    depends_on:
+      - llama
+    ports:
+      - "${WEBUI_PORT:-3000}:8080"     # host port from .env; container port stays 8080
+    environment:
+      # --- Auto-connect to the local model (no clicking through settings) ---
+      - ENABLE_OPENAI_API=true
+      - OPENAI_API_BASE_URL=http://llama:8080/v1   # internal link; uses container port 8080, NOT LLAMA_PORT
+      - OPENAI_API_KEY=local
+      - ENABLE_OLLAMA_API=false      # we don't use Ollama; stops failed probes
+      # --- Convenience ---
+      - WEBUI_AUTH=false             # single-user, no login screen. Remove for multi-user.
+      - ENABLE_WEB_SEARCH=true       # DuckDuckGo needs no API key
+      - WEB_SEARCH_ENGINE=duckduckgo
+    volumes:
+      - openwebui-data:/app/backend/data   # chats, knowledge bases, settings persist here
+
+volumes:
+  openwebui-data:
