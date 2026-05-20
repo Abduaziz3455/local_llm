@@ -65,7 +65,7 @@ services:
               capabilities: [gpu]
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:cuda   # [CPU] -> ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     restart: unless-stopped
     depends_on:
@@ -85,6 +85,13 @@ services:
       - WEB_SEARCH_ENGINE=duckduckgo
     volumes:
       - openwebui-data:/app/backend/data   # chats, knowledge bases, settings persist here
+    deploy:                          # [CPU] delete this entire 'deploy:' block
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
 volumes:
   openwebui-data:
