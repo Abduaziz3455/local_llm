@@ -33,25 +33,40 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
-      start_period: 180s   # model load can take minutes — don't fail during it
+      start_period: 600s   # first run may DOWNLOAD the model — don't fail during it
     ports:
       - "${LLAMA_PORT:-8080}:8080"     # host port from .env; container port stays 8080
+    environment:
+      # Token for gated/private HuggingFace repos when using the -hf fallback.
+      - HF_TOKEN=${HF_TOKEN:-}
+      # Where llama.cpp stores models pulled via -hf (the llama-cache volume).
+      - LLAMA_CACHE=/llama-cache
     volumes:
       # Mount the WHOLE HuggingFace hub cache read-only, so any model you
       # download later is visible. Override the location with HF_HUB if needed.
       - ${HF_HUB:-/home/abduaziz/.cache/huggingface/hub}:/hub:ro
+      # Writable cache for models downloaded from HuggingFace via -hf.
+      - llama-cache:/llama-cache
     # Picks the .gguf from the selected model folder (any snapshot hash),
-    # skips the vision "mmproj" file, then starts the server.
+    # skips the vision "mmproj" file. If nothing is found locally, falls back
+    # to downloading HF_MODEL from HuggingFace. Then starts the server.
     entrypoint:
       - /bin/sh
       - -c
       - |
         REPO="${MODEL_REPO:-models--unsloth--Qwen3.5-9B-GGUF}"
-        MODEL=$$(find "/hub/$$REPO" -iname "*${QUANT:-}*.gguf" | grep -vi mmproj | sort | head -n1)
-        if [ -z "$$MODEL" ]; then echo "No .gguf found under /hub/$$REPO"; exit 1; fi
-        echo "==> Loading model: $$MODEL"
+        MODEL=$$(find "/hub/$$REPO" -iname "*${QUANT:-}*.gguf" 2>/dev/null | grep -vi mmproj | sort | head -n1)
+        if [ -n "$$MODEL" ]; then
+          echo "==> Loading local model: $$MODEL"
+          set -- -m "$$MODEL"
+        elif [ -n "${HF_MODEL:-}" ]; then
+          echo "==> Not found under /hub/$$REPO; downloading from HuggingFace: ${HF_MODEL:-}"
+          set -- -hf "${HF_MODEL:-}"
+        else
+          echo "No .gguf found under /hub/$$REPO and HF_MODEL is not set"; exit 1
+        fi
         exec /app/llama-server \
-          -m "$$MODEL" \
+          "$$@" \
           --host 0.0.0.0 --port 8080 \
           --alias local-llm \
           --api-key local \
@@ -139,3 +154,4 @@ services:
 volumes:
   openwebui-data:
   bot-data:
+  llama-cache:        # GGUF models downloaded from HuggingFace via -hf
