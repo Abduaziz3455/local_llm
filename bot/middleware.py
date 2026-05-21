@@ -95,8 +95,8 @@ class ThrottlingMiddleware(BaseMiddleware):
 
 
 class AdminOnlyMiddleware(BaseMiddleware):
-    def __init__(self, admin_user_id: int) -> None:
-        self._admin = admin_user_id
+    def __init__(self, admin_user_ids: frozenset[int]) -> None:
+        self._admins = admin_user_ids
 
     async def __call__(
         self,
@@ -105,7 +105,7 @@ class AdminOnlyMiddleware(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
         user = event.from_user
-        if user is not None and user.id == self._admin:
+        if user is not None and user.id in self._admins:
             return await handler(event, data)
 
         # Not the admin — a guest call (has guest_query_id) is dropped silently;

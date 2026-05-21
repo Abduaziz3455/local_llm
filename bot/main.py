@@ -52,11 +52,12 @@ async def _heartbeat(path: Path, interval: float = 30.0) -> None:
         await asyncio.sleep(interval)
 
 
-async def _setup_commands(bot: Bot, admin_user_id: int) -> None:
-    """Publish the command menu to the admin only, and clear it for everyone else."""
-    await bot.set_my_commands(
-        _ADMIN_COMMANDS, scope=BotCommandScopeChat(chat_id=admin_user_id)
-    )
+async def _setup_commands(bot: Bot, admin_user_ids: frozenset[int]) -> None:
+    """Publish the command menu to admins only, and clear it for everyone else."""
+    for admin_user_id in admin_user_ids:
+        await bot.set_my_commands(
+            _ADMIN_COMMANDS, scope=BotCommandScopeChat(chat_id=admin_user_id)
+        )
     # Wipe any previously-set default-scope commands so strangers see nothing.
     await bot.delete_my_commands(scope=BotCommandScopeDefault())
 
@@ -82,12 +83,19 @@ async def main() -> None:
     )
 
     me = await bot.get_me()
-    log.info("Starting bot @%s (admin user id: %s)", me.username, config.admin_user_id)
+    log.info(
+        "Starting bot @%s (admin user ids: %s)",
+        me.username,
+        ", ".join(str(uid) for uid in sorted(config.admin_user_ids)),
+    )
 
-    # Publish the slash-command menu to the admin's chat only.
+    # Publish the slash-command menu to admin chats only.
     try:
-        await _setup_commands(bot, config.admin_user_id)
-        log.info("Command menu registered for admin chat %s", config.admin_user_id)
+        await _setup_commands(bot, config.admin_user_ids)
+        log.info(
+            "Command menu registered for %d admin chat(s)",
+            len(config.admin_user_ids),
+        )
     except Exception as exc:  # noqa: BLE001 — non-fatal; the bot still works
         log.warning("Could not register command menu: %s", exc)
 
@@ -117,7 +125,7 @@ async def main() -> None:
     dp.message.outer_middleware(flood)
     dp.guest_message.outer_middleware(flood)
 
-    gate = AdminOnlyMiddleware(config.admin_user_id)
+    gate = AdminOnlyMiddleware(config.admin_user_ids)
     dp.message.outer_middleware(gate)
     dp.guest_message.outer_middleware(gate)
 

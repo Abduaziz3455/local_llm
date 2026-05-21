@@ -187,7 +187,8 @@ service in the compose file and answers **only you** — anywhere on Telegram.
 2. **Enable Guest Mode.** In BotFather, open the bot's settings MiniApp and turn
    on **Guest Mode** (so `@mention` works in any chat).
 3. **Find your user id.** Message [@userinfobot](https://t.me/userinfobot), copy
-   the number into `ADMIN_USER_ID`. The bot ignores everyone else.
+   the number into `ADMIN_USER_IDS`. Comma-separate several ids to allow more
+   than one admin. The bot ignores everyone else.
 4. **Create the two model entries** in Open WebUI → **Workspace → Models**
    (see *Thinking mode* above). Name them so their ids match `MODEL_FAST` and
    `MODEL_THINKING` in `.env` (default `qwen-fast` / `qwen-thinking`). Enable web
@@ -237,7 +238,7 @@ Check Admin Panel → Settings → Audio (the local Whisper engine works out of 
 box; the first transcription downloads its model).
 
 **`Missing required environment variable`** — fill in `TELEGRAM_BOT_TOKEN`,
-`ADMIN_USER_ID` and `OPENWEBUI_API_KEY` in `.env`, then `docker compose up -d`.
+`ADMIN_USER_IDS` and `OPENWEBUI_API_KEY` in `.env`, then `docker compose up -d`.
 
 ---
 

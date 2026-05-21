@@ -24,10 +24,27 @@ def _require(name: str) -> str:
     return value
 
 
+def _load_admin_ids() -> frozenset[int]:
+    """Parse the admin allow-list.
+
+    Prefers ADMIN_USER_IDS (comma-separated) and falls back to the legacy
+    single-value ADMIN_USER_ID so old `.env` files keep working.
+    """
+    raw = os.getenv("ADMIN_USER_IDS", "").strip() or os.getenv("ADMIN_USER_ID", "").strip()
+    if not raw:
+        raise RuntimeError(
+            "Missing required environment variable: ADMIN_USER_IDS"
+        )
+    ids = {int(part.strip()) for part in raw.split(",") if part.strip()}
+    if not ids:
+        raise RuntimeError("ADMIN_USER_IDS contained no valid numeric ids")
+    return frozenset(ids)
+
+
 @dataclass(frozen=True)
 class Config:
     bot_token: str
-    admin_user_id: int
+    admin_user_ids: frozenset[int]
     openwebui_url: str          # e.g. http://open-webui:8080  (no trailing slash, no /api)
     openwebui_api_key: str
     model_fast: str             # Open WebUI model-entry id used by default
@@ -42,7 +59,7 @@ class Config:
 def load_config() -> Config:
     return Config(
         bot_token=_require("TELEGRAM_BOT_TOKEN"),
-        admin_user_id=int(_require("ADMIN_USER_ID")),
+        admin_user_ids=_load_admin_ids(),
         openwebui_url=os.getenv("OPENWEBUI_URL", "http://open-webui:8080").rstrip("/"),
         openwebui_api_key=_require("OPENWEBUI_API_KEY"),
         model_fast=os.getenv("MODEL_FAST", "qwen-fast").strip(),

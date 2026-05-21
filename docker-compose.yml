@@ -147,7 +147,7 @@ services:
       open-webui:
         condition: service_healthy
     env_file:
-      - .env                         # TELEGRAM_BOT_TOKEN, ADMIN_USER_ID, OPENWEBUI_API_KEY, …
+      - .env                         # TELEGRAM_BOT_TOKEN, ADMIN_USER_IDS, OPENWEBUI_API_KEY, …
     volumes:
       - bot-data:/data               # SQLite chat history & per-chat settings
 
