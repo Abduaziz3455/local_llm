@@ -47,21 +47,31 @@ services:
       - ${HF_HUB:-/home/abduaziz/.cache/huggingface/hub}:/hub:ro
       # Writable cache for models downloaded from HuggingFace via -hf.
       - llama-cache:/llama-cache
-    # Picks the .gguf from the selected model folder (any snapshot hash),
-    # skips the vision "mmproj" file. If nothing is found locally, falls back
-    # to downloading HF_MODEL from HuggingFace. Then starts the server.
+    # Picks the main .gguf from the selected model folder (any snapshot hash)
+    # and, if present, its companion "mmproj" vision file — loaded with
+    # --mmproj so the model can read images. If nothing is found locally,
+    # falls back to downloading HF_MODEL from HuggingFace. Then starts the
+    # server.
     entrypoint:
       - /bin/sh
       - -c
       - |
-        REPO="${MODEL_REPO:-models--unsloth--Qwen3.5-9B-GGUF}"
+        REPO="${MODEL_REPO:-models--unsloth--Qwen3.6-35B-A3B-GGUF}"
         MODEL=$$(find "/hub/$$REPO" -iname "*${QUANT:-}*.gguf" 2>/dev/null | grep -vi mmproj | sort | head -n1)
+        MMPROJ=$$(find "/hub/$$REPO" -iname "*mmproj*.gguf" 2>/dev/null | sort | head -n1)
         if [ -n "$$MODEL" ]; then
           echo "==> Loading local model: $$MODEL"
           set -- -m "$$MODEL"
+          if [ -n "$$MMPROJ" ]; then
+            echo "==> Vision projector: $$MMPROJ"
+            set -- "$$@" --mmproj "$$MMPROJ"
+          else
+            echo "==> No mmproj file found under /hub/$$REPO — image input disabled."
+          fi
         elif [ -n "${HF_MODEL:-}" ]; then
           echo "==> Not found under /hub/$$REPO; downloading from HuggingFace: ${HF_MODEL:-}"
           set -- -hf "${HF_MODEL:-}"
+          # llama.cpp's -hf auto-downloads the repo's mmproj when one exists.
         else
           echo "No .gguf found under /hub/$$REPO and HF_MODEL is not set"; exit 1
         fi
@@ -91,6 +101,11 @@ services:
         #   lower N       -> more experts on GPU = faster, until VRAM fills (~12 GB)
         # Tune N_CPU_MOE down in .env while watching `nvidia-smi` for OOM headroom.
         # If it falls into thinking loops, lower --temp to 0.6. Raise -c toward 262144 if you can.
+        #
+        # The vision encoder (mmproj) is offloaded to the GPU by default — it adds
+        # ~1-1.5 GB VRAM and makes image encoding much faster. If a future, larger
+        # model leaves no spare VRAM and startup CUDA-OOMs, add --no-mmproj-offload
+        # to the --mmproj line in the entrypoint above to keep the encoder on CPU.
     deploy:                          # [CPU] delete this entire 'deploy:' block
       resources:
         reservations:
