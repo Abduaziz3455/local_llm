@@ -25,7 +25,7 @@ Keep `docker-compose.yml`, `.env` and `README.md` in the same folder.
    To get another later:
    ```bash
    pip install -U huggingface_hub
-   hf download unsloth/Qwen3.5-9B-GGUF --include "*UD-Q4_K_XL*"
+   hf download unsloth/Qwen3.6-35B-A3B-GGUF --include "*UD-Q4_K_XL*"
    ```
 3. **For GPU only:** an NVIDIA driver (`nvidia-smi` works on the host) **and** the
    NVIDIA Container Toolkit (see below). **CPU works with no extra setup.**
@@ -99,8 +99,9 @@ The model appears automatically as `local-llm`. No login, no setup clicks.
 |--------------|------------------------------------------|------------------------------------------------|
 | `WEBUI_PORT` | `3000`                                   | Dashboard port on your machine                 |
 | `LLAMA_PORT` | `8080`                                   | API port on your machine                       |
-| `MODEL_REPO` | `models--unsloth--Qwen3.5-9B-GGUF`       | Which model folder to load                     |
-| `QUANT`      | *(blank)*                                | Pin a quant if a repo has several, e.g. `UD-Q4_K_XL` |
+| `MODEL_REPO` | `models--unsloth--Qwen3.6-35B-A3B-GGUF`  | Which model folder to load                     |
+| `QUANT`      | `UD-Q4_K_XL`                             | Pin a quant if a repo has several              |
+| `N_CPU_MOE`  | `99`                                     | MoE expert layers offloaded to RAM; lower = faster, more VRAM |
 | `HF_HUB`     | `/home/abduaziz/.cache/huggingface/hub`  | Your HuggingFace cache location                |
 
 Change a value, then `docker compose up -d`.
@@ -114,14 +115,16 @@ Point `MODEL_REPO` at any model folder you've downloaded:
 MODEL_REPO=models--unsloth--Qwen3.6-27B-GGUF docker compose up -d
 ```
 
-> Note: the sampling defaults in the compose file are tuned for **Qwen3.5**. A
+> Note: the sampling defaults in the compose file are tuned for **Qwen3.6**. A
 > same-family model just works; a different family may want different sampling.
+> A **dense** model (e.g. Qwen3.6-27B) ignores `N_CPU_MOE` — for those, drop
+> `-ngl` instead to offload whole layers if it doesn't fit in VRAM.
 
 ---
 
 ## Thinking mode (on/off)
 
-Thinking is **not forced** by the server — you control it in the dashboard. Qwen3.5
+Thinking is **not forced** by the server — you control it in the dashboard. Qwen3.6
 defaults to thinking **off**. There's no one-click button (Open WebUI's native think
 toggle is Ollama-only), so the clean way is to make two model entries and switch with
 the model dropdown:
@@ -137,7 +140,7 @@ the model dropdown:
 Now the model picker at the top of the chat is your on/off switch. When thinking is on,
 Open WebUI shows the reasoning in a collapsible block automatically.
 
-> Tip: if the 9B gets stuck in long thinking loops, prefer the "fast" entry, or lower
+> Tip: if the model gets stuck in long thinking loops, prefer the "fast" entry, or lower
 > its temperature.
 
 ---
@@ -156,9 +159,10 @@ Something else uses 3000 or 8080. Change `WEBUI_PORT` / `LLAMA_PORT` in `.env`.
 `ls ~/.cache/huggingface/hub`.
 
 **Model is very slow**
-You're on CPU. Expected for a 9B — use the GPU path, or a smaller quant/model.
+On CPU this is expected — use the GPU path. On GPU, the experts are RAM-resident:
+lower `N_CPU_MOE` in `.env` to push more onto the GPU (watch `nvidia-smi` for OOM).
 
-**Garbled output, or endless "thinking" loops (9B)**
+**Garbled output, or endless "thinking" loops**
 Lower `--temp` to `0.6` in the compose file. For garbled text, the context may be
 too low (raise `-c`) or it's a KV-cache issue (add `--cache-type-k bf16 --cache-type-v bf16`).
 

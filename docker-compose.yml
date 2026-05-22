@@ -1,5 +1,5 @@
 # =============================================================================
-#  Qwen3.5-9B (GGUF) + Open WebUI  —  single-file local stack
+#  Qwen3.6-35B-A3B (GGUF) + Open WebUI  —  single-file local stack
 # -----------------------------------------------------------------------------
 #  Start:      docker compose up -d
 #  Dashboard:  http://localhost:3000    (or WEBUI_PORT set in .env)
@@ -72,16 +72,25 @@ services:
           --api-key local \
           -c 16384 \
           -ngl 99 \
+          --n-cpu-moe ${N_CPU_MOE:-99} \
           -fa on \
           --jinja \
           --chat-template-kwargs '{"enable_thinking":false}' \
           --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --presence-penalty 1.5
         # Thinking is NOT forced here — control it from the dashboard (see README).
-        # Qwen3.5 9B defaults thinking OFF. In Open WebUI, set a model's parameter
+        # Qwen3.6 defaults thinking OFF. In Open WebUI, set a model's parameter
         #   chat_template_kwargs = {"enable_thinking": true}   to turn it on.
         # Sampling above is Qwen's thinking preset; override per model in the dashboard
         # (use temp 0.7 / top-p 0.8 for a non-thinking "fast" variant).
-        # If the 9B falls into thinking loops, lower --temp to 0.6. Raise -c toward 262144 if you can.
+        #
+        # Qwen3.6-35B-A3B is a Mixture-of-Experts model (~23 GB at UD-Q4_K_XL) — too
+        # big for a 12 GB GPU. --n-cpu-moe N keeps the first N layers' EXPERT tensors
+        # in system RAM while attention/shared layers stay on the GPU (-ngl 99).
+        # Only 3B params activate per token, so CPU-resident experts stay fast.
+        #   N_CPU_MOE=99  -> all experts on CPU (safe default, lowest VRAM use)
+        #   lower N       -> more experts on GPU = faster, until VRAM fills (~12 GB)
+        # Tune N_CPU_MOE down in .env while watching `nvidia-smi` for OOM headroom.
+        # If it falls into thinking loops, lower --temp to 0.6. Raise -c toward 262144 if you can.
     deploy:                          # [CPU] delete this entire 'deploy:' block
       resources:
         reservations:
