@@ -19,6 +19,7 @@ from aiogram.types import (
 
 from bot.config import load_config
 from bot.db import Database
+from bot.generation import GenerationManager
 from bot.handlers import commands, dm, guest, tools
 from bot.middleware import AdminOnlyMiddleware, ThrottlingMiddleware
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
@@ -35,6 +36,7 @@ _ADMIN_COMMANDS = [
     BotCommand(command="translate", description="Translate a message or text"),
     BotCommand(command="rewrite", description="Rewrite text in a given style"),
     BotCommand(command="files", description="List or clear attached documents"),
+    BotCommand(command="stop", description="Stop the reply being generated"),
     BotCommand(command="reset", description="Forget this chat's history"),
     BotCommand(command="status", description="Check the model backend"),
 ]
@@ -81,6 +83,9 @@ async def main() -> None:
     client = OpenWebUIClient(
         config.openwebui_url, config.openwebui_api_key, config.request_timeout
     )
+    # Tracks the in-flight generation per chat so /stop and follow-up
+    # questions can cancel a reply that's still streaming.
+    gen = GenerationManager()
 
     me = await bot.get_me()
     log.info(
@@ -144,6 +149,7 @@ async def main() -> None:
             db=db,
             client=client,
             config=config,
+            gen=gen,
             bot_username=me.username,
             allowed_updates=["message", "guest_message"],
         )

@@ -11,7 +11,7 @@ Auth is a bearer token generated in Open WebUI → Settings → Account.
 from __future__ import annotations
 
 import json
-from typing import AsyncIterator, Iterable
+from typing import Any, AsyncIterator, Iterable
 
 import httpx
 
@@ -20,7 +20,9 @@ class OpenWebUIError(RuntimeError):
     """Raised when the Open WebUI API is unreachable or returns an error."""
 
 
-Message = dict[str, str]
+# ``content`` is usually a plain string, but for multimodal turns it becomes a
+# list of OpenAI-shaped content parts (text + image_url) — hence the ``Any``.
+Message = dict[str, Any]
 
 
 class OpenWebUIClient:

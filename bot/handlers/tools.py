@@ -13,6 +13,7 @@ from aiogram.types import Message
 from bot.config import Config
 from bot.db import Database
 from bot.engine import stream_reply
+from bot.generation import GenerationManager
 from bot.openwebui import OpenWebUIClient
 from bot.routing import model_id
 from bot.tasks import SUMMARIZE, rewrite_system, translate_system
@@ -53,6 +54,7 @@ async def _run_tool(
         conversation=conversation,
         web_search=web_search,
         thinking=settings.mode == "thinking",
+        timeout=config.response_timeout,
     )
 
 
@@ -64,6 +66,7 @@ async def cmd_summarize(
     db: Database,
     client: OpenWebUIClient,
     config: Config,
+    gen: GenerationManager,
 ) -> None:
     text = _replied_text(message) or (command.args or "").strip()
     if not text:
@@ -73,10 +76,10 @@ async def cmd_summarize(
             parse_mode="HTML",
         )
         return
-    await _run_tool(
+    gen.run(message.chat.id, _run_tool(
         message, bot=bot, db=db, client=client, config=config,
         system=SUMMARIZE, user_text=text, web_search=True,
-    )
+    ))
 
 
 @router.message(Command("translate", "tr"))
@@ -87,6 +90,7 @@ async def cmd_translate(
     db: Database,
     client: OpenWebUIClient,
     config: Config,
+    gen: GenerationManager,
 ) -> None:
     args = (command.args or "").split(maxsplit=1)
     replied = _replied_text(message)
@@ -102,10 +106,10 @@ async def cmd_translate(
             parse_mode="HTML",
         )
         return
-    await _run_tool(
+    gen.run(message.chat.id, _run_tool(
         message, bot=bot, db=db, client=client, config=config,
         system=translate_system(target), user_text=text, web_search=False,
-    )
+    ))
 
 
 @router.message(Command("rewrite"))
@@ -116,6 +120,7 @@ async def cmd_rewrite(
     db: Database,
     client: OpenWebUIClient,
     config: Config,
+    gen: GenerationManager,
 ) -> None:
     args = (command.args or "").split(maxsplit=1)
     replied = _replied_text(message)
@@ -133,7 +138,7 @@ async def cmd_rewrite(
             parse_mode="HTML",
         )
         return
-    await _run_tool(
+    gen.run(message.chat.id, _run_tool(
         message, bot=bot, db=db, client=client, config=config,
         system=rewrite_system(style), user_text=text, web_search=False,
-    )
+    ))

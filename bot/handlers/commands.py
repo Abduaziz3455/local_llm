@@ -8,6 +8,7 @@ from aiogram.types import Message
 
 from bot.config import Config
 from bot.db import Database
+from bot.generation import GenerationManager
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 
 router = Router(name="commands")
@@ -15,8 +16,9 @@ router = Router(name="commands")
 _HELP = (
     "<b>Local Qwen assistant</b>\n\n"
     "Just send me a message and I'll answer — with web search and memory of our "
-    "chat. Send a document to chat about it, or a voice message and I'll "
-    "transcribe and answer it. You can also summon me in any chat by mentioning "
+    "chat. Send a document to chat about it, a photo and I'll describe or answer "
+    "questions about it, or a voice message and I'll transcribe and answer it. "
+    "You can also summon me in any chat by mentioning "
     "my @username (guest mode: one question, one answer, no memory there).\n\n"
     "<b>Per-message model flag</b>\n"
     "Add <code>/think</code> (or <code>!t</code>) anywhere in a message for the "
@@ -31,6 +33,7 @@ _HELP = (
     "<code>/mode fast</code>)\n"
     "/web — show or toggle web search (<code>/web on</code> | <code>/web off</code>)\n"
     "/files — list attached documents (<code>/files clear</code> to remove them)\n"
+    "/stop — stop the reply that's currently being generated\n"
     "/reset (or /new) — forget this chat's history\n"
     "/status — check the model backend\n"
     "/help — this message"
@@ -100,6 +103,17 @@ async def cmd_files(message: Message, command: CommandObject, db: Database) -> N
         "Remove them with <code>/files clear</code>.",
         parse_mode="HTML",
     )
+
+
+@router.message(Command("stop"))
+async def cmd_stop(message: Message, gen: GenerationManager) -> None:
+    """Cancel the reply currently streaming in this chat, if any.
+
+    When a generation is cancelled the streaming message flags itself as
+    stopped, so a successful /stop needs no extra confirmation here.
+    """
+    if not gen.cancel(message.chat.id):
+        await message.answer("Nothing is being generated right now.")
 
 
 @router.message(Command("reset", "new"))

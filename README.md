@@ -221,9 +221,16 @@ DM the bot `/start` to confirm it's alive.
   removes them.
 - **Voice messages** — send a voice message or audio file; the bot transcribes
   it with Open WebUI's speech-to-text and answers it as a question.
+- **Images** — send a photo (or an image as a file); the multimodal model reads
+  it. Add a caption to ask a specific question, or send it bare for a
+  description. You can also **reply** to an earlier photo with a follow-up
+  question, and mentioning the bot on a photo works in guest mode too.
+- **Stop a reply** — `/stop` cancels the answer that's currently streaming;
+  sending a new question also supersedes the one in progress. Every generation
+  is capped at `RESPONSE_TIMEOUT` seconds (default 120) so it can't run away.
 - **Commands:** `/mode think|fast` (default model), `/web on|off` (web search),
-  `/files` (attached docs), `/reset` (forget history), `/status` (backend
-  health), `/help`.
+  `/files` (attached docs), `/stop` (cancel current reply), `/reset` (forget
+  history), `/status` (backend health), `/help`.
 - **Guest mode:** in any chat, type `@yourbotname <question>` → one reply.
 
 ### Bot errors

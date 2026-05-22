@@ -7,9 +7,10 @@ no member list, and exactly one reply — sent via ``answerGuestQuery``.
 
 from __future__ import annotations
 
+import asyncio
 import re
 
-from aiogram import Router
+from aiogram import Bot, Router
 from aiogram.types import (
     InlineQueryResultArticle,
     InputTextMessageContent,
@@ -18,6 +19,7 @@ from aiogram.types import (
 
 from bot.config import Config
 from bot.formatting import TELEGRAM_LIMIT, render_html, visible_so_far
+from bot.images import user_message
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 from bot.prompts import system_prompt
 from bot.routing import model_id, route
@@ -34,26 +36,43 @@ def _strip_mention(text: str, bot_username: str) -> str:
 @router.guest_message()
 async def handle_guest(
     message: Message,
+    bot: Bot,
     client: OpenWebUIClient,
     config: Config,
     bot_username: str,
 ) -> None:
     raw = message.text or message.caption or ""
     routed = route(_strip_mention(raw, bot_username), default="fast")
-    if not routed.text:
+
+    # A photo attached to the mentioning message is sent to the vision model.
+    images = None
+    if message.photo:
+        try:
+            buf = await bot.download(message.photo[-1])
+            content = buf.read() if buf is not None else b""
+            images = [(content, "image/jpeg")]
+        except Exception:  # noqa: BLE001 — fall back to a text-only answer
+            images = None
+
+    if not routed.text and not images:
         return  # nothing was actually asked
 
     model = model_id(routed.mode, config.model_fast, config.model_thinking)
-    conversation = [system_prompt(), {"role": "user", "content": routed.text}]
+    conversation = [system_prompt(), user_message(routed.text, images)]
 
     try:
-        answer = await client.complete_chat(
-            model,
-            conversation,
-            web_search=True,
-            chat_id=f"local:telegram-guest-{message.chat.id}",
+        answer = await asyncio.wait_for(
+            client.complete_chat(
+                model,
+                conversation,
+                web_search=True,
+                chat_id=f"local:telegram-guest-{message.chat.id}",
+            ),
+            timeout=config.response_timeout,
         )
         answer = visible_so_far(answer) or "The model returned an empty answer."
+    except asyncio.TimeoutError:
+        answer = "⚠️ The model took too long to answer — try a simpler question."
     except OpenWebUIError as exc:
         answer = f"⚠️ The local model is unavailable: {exc}"
     except Exception as exc:  # noqa: BLE001 — never leave the query unanswered
