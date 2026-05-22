@@ -19,21 +19,28 @@
 # =============================================================================
 
 services:
+  # ---------------------------------------------------------------------------
+  #  llama-swap — OpenAI-compatible proxy that runs llama-server on demand and
+  #  UNLOADS it after an idle timeout (see llama-swap/config.yaml -> ttl),
+  #  freeing GPU VRAM + CPU RAM while idle. First request after idle pays a
+  #  one-time cold-start (model reload). Status UI: http://localhost:8080/
+  #
+  #  The actual llama-server command lives in llama-swap/start-llama.sh — edit
+  #  model flags / sampling there. Model discovery still reads .env (MODEL_REPO,
+  #  QUANT, N_CPU_MOE, HF_MODEL) via the environment block below.
+  # ---------------------------------------------------------------------------
   llama:
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda   # [CPU] -> ghcr.io/ggml-org/llama.cpp:server
+    # Unified llama-swap image — bundles both llama-swap and llama-server.
+    # [CPU] -> ghcr.io/mostlygeek/llama-swap:unified-vulkan  (and delete 'deploy:' below)
+    image: ghcr.io/mostlygeek/llama-swap:unified-cuda
     container_name: llama
     restart: unless-stopped
     # Cap log size so it can't fill the disk during long-running 24/7 use.
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
-    # Reports healthy once the model is loaded and the server can serve.
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 600s   # first run may DOWNLOAD the model — don't fail during it
+    # Run llama-swap against our mounted config (default config path differs).
+    command: ["-config", "/llama-swap/config.yaml", "-listen", "0.0.0.0:8080"]
     ports:
       - "${LLAMA_PORT:-8080}:8080"     # host port from .env; container port stays 8080
     environment:
@@ -41,71 +48,19 @@ services:
       - HF_TOKEN=${HF_TOKEN:-}
       # Where llama.cpp stores models pulled via -hf (the llama-cache volume).
       - LLAMA_CACHE=/llama-cache
+      # Read by start-llama.sh to locate / download the model at (re)load time.
+      - MODEL_REPO=${MODEL_REPO:-models--unsloth--Qwen3.6-35B-A3B-GGUF}
+      - QUANT=${QUANT:-}
+      - N_CPU_MOE=${N_CPU_MOE:-99}
+      - HF_MODEL=${HF_MODEL:-}
     volumes:
+      # llama-swap config + the start-llama.sh launcher script.
+      - ./llama-swap:/llama-swap:ro
       # Mount the WHOLE HuggingFace hub cache read-only, so any model you
       # download later is visible. Override the location with HF_HUB if needed.
       - ${HF_HUB:-/home/abduaziz/.cache/huggingface/hub}:/hub:ro
       # Writable cache for models downloaded from HuggingFace via -hf.
       - llama-cache:/llama-cache
-    # Picks the main .gguf from the selected model folder (any snapshot hash)
-    # and, if present, its companion "mmproj" vision file — loaded with
-    # --mmproj so the model can read images. If nothing is found locally,
-    # falls back to downloading HF_MODEL from HuggingFace. Then starts the
-    # server.
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        REPO="${MODEL_REPO:-models--unsloth--Qwen3.6-35B-A3B-GGUF}"
-        MODEL=$$(find "/hub/$$REPO" -iname "*${QUANT:-}*.gguf" 2>/dev/null | grep -vi mmproj | sort | head -n1)
-        MMPROJ=$$(find "/hub/$$REPO" -iname "*mmproj*.gguf" 2>/dev/null | sort | head -n1)
-        if [ -n "$$MODEL" ]; then
-          echo "==> Loading local model: $$MODEL"
-          set -- -m "$$MODEL"
-          if [ -n "$$MMPROJ" ]; then
-            echo "==> Vision projector: $$MMPROJ"
-            set -- "$$@" --mmproj "$$MMPROJ"
-          else
-            echo "==> No mmproj file found under /hub/$$REPO — image input disabled."
-          fi
-        elif [ -n "${HF_MODEL:-}" ]; then
-          echo "==> Not found under /hub/$$REPO; downloading from HuggingFace: ${HF_MODEL:-}"
-          set -- -hf "${HF_MODEL:-}"
-          # llama.cpp's -hf auto-downloads the repo's mmproj when one exists.
-        else
-          echo "No .gguf found under /hub/$$REPO and HF_MODEL is not set"; exit 1
-        fi
-        exec /app/llama-server \
-          "$$@" \
-          --host 0.0.0.0 --port 8080 \
-          --alias local-llm \
-          --api-key local \
-          -c 16384 \
-          -ngl 99 \
-          --n-cpu-moe ${N_CPU_MOE:-99} \
-          -fa on \
-          --jinja \
-          --chat-template-kwargs '{"enable_thinking":false}' \
-          --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --presence-penalty 1.5
-        # Thinking is NOT forced here — control it from the dashboard (see README).
-        # Qwen3.6 defaults thinking OFF. In Open WebUI, set a model's parameter
-        #   chat_template_kwargs = {"enable_thinking": true}   to turn it on.
-        # Sampling above is Qwen's thinking preset; override per model in the dashboard
-        # (use temp 0.7 / top-p 0.8 for a non-thinking "fast" variant).
-        #
-        # Qwen3.6-35B-A3B is a Mixture-of-Experts model (~23 GB at UD-Q4_K_XL) — too
-        # big for a 12 GB GPU. --n-cpu-moe N keeps the first N layers' EXPERT tensors
-        # in system RAM while attention/shared layers stay on the GPU (-ngl 99).
-        # Only 3B params activate per token, so CPU-resident experts stay fast.
-        #   N_CPU_MOE=99  -> all experts on CPU (safe default, lowest VRAM use)
-        #   lower N       -> more experts on GPU = faster, until VRAM fills (~12 GB)
-        # Tune N_CPU_MOE down in .env while watching `nvidia-smi` for OOM headroom.
-        # If it falls into thinking loops, lower --temp to 0.6. Raise -c toward 262144 if you can.
-        #
-        # The vision encoder (mmproj) is offloaded to the GPU by default — it adds
-        # ~1-1.5 GB VRAM and makes image encoding much faster. If a future, larger
-        # model leaves no spare VRAM and startup CUDA-OOMs, add --no-mmproj-offload
-        # to the --mmproj line in the entrypoint above to keep the encoder on CPU.
     deploy:                          # [CPU] delete this entire 'deploy:' block
       resources:
         reservations:
@@ -129,7 +84,7 @@ services:
       start_period: 60s
     depends_on:
       llama:
-        condition: service_healthy   # wait until the model is actually loaded
+        condition: service_started   # llama-swap proxy is up; model loads lazily on first request
     ports:
       - "${WEBUI_PORT:-3000}:8080"     # host port from .env; container port stays 8080
     environment:

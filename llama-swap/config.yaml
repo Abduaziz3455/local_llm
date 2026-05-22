@@ -1,0 +1,31 @@
+# =============================================================================
+#  llama-swap configuration — adds IDLE MODE to the stack.
+# -----------------------------------------------------------------------------
+#  llama-swap is an OpenAI-compatible proxy that starts llama-server on the
+#  first request and STOPS it after `ttl` seconds of inactivity — freeing all
+#  GPU VRAM (and the CPU RAM holding the MoE experts) while the model is idle.
+#  The next request transparently reloads it (one cold-start delay).
+#
+#  Status / manual control UI:  http://localhost:8080/   (or LLAMA_PORT)
+# =============================================================================
+
+# How long to wait for llama-server to become ready after a (re)start.
+# Loading the ~23 GB MoE model from disk can take a while — keep this generous.
+healthCheckTimeout: 600
+logLevel: info
+
+models:
+  # Model id exposed to Open WebUI / the API. Kept as "local-llm" to match the
+  # old llama-server --alias, so nothing downstream needs to change.
+  "local-llm":
+    # start-llama.sh discovers the GGUF and execs llama-server on ${PORT},
+    # the port llama-swap assigns for this upstream.
+    cmd: sh /llama-swap/start-llama.sh ${PORT}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+
+    # ---- IDLE MODE -----------------------------------------------------------
+    # Unload the model after this many seconds with no requests, releasing the
+    # GPU. Raise it if cold-starts annoy you; lower it to free the GPU sooner.
+    #   300  = 5 minutes      900 = 15 minutes      0 would disable idle-unload
+    ttl: 300
