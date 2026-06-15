@@ -17,10 +17,15 @@ logLevel: info
 models:
   # Model id exposed to Open WebUI / the API. Kept as "local-llm" to match the
   # old llama-server --alias, so nothing downstream needs to change.
+  #
+  # Pick a model by sending its id as the "model" field in the API request
+  # (Open WebUI's model selector). llama-swap loads it lazily and unloads the
+  # previous one — only ONE model is resident at a time (12 GB GPU can't hold
+  # both), and each pays a one-time cold-start on first use after idle.
   "local-llm":
     # start-llama.sh discovers the GGUF and execs llama-server on ${PORT},
-    # the port llama-swap assigns for this upstream.
-    cmd: sh /llama-swap/start-llama.sh ${PORT}
+    # the port llama-swap assigns for this upstream. 2nd arg = profile name.
+    cmd: sh /llama-swap/start-llama.sh ${PORT} qwen
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health
 
@@ -28,4 +33,14 @@ models:
     # Unload the model after this many seconds with no requests, releasing the
     # GPU. Raise it if cold-starts annoy you; lower it to free the GPU sooner.
     #   300  = 5 minutes      900 = 15 minutes      0 would disable idle-unload
+    ttl: 300
+
+  # Gemma-4-12b (dense) with MTP — Multi-Token Prediction draft acceleration.
+  # The "gemma" profile in start-llama.sh hard-codes the gemma-4-12b repo and
+  # passes --model-draft <MTP drafter> --spec-type draft-mtp for ~1.4-2.2x
+  # faster, lossless generation. Select it in Open WebUI by the id below.
+  "gemma-4-12b":
+    cmd: sh /llama-swap/start-llama.sh ${PORT} gemma
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
     ttl: 300
