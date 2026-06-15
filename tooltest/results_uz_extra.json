@@ -1,0 +1,559 @@
+{
+  "gemma-4-12b": [
+    {
+      "case": "uzx_movie",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 5.47,
+      "text": "",
+      "args": {
+        "is_anonymous": true,
+        "options": [
+          "Juma",
+          "Shanba",
+          "Yakshanba"
+        ],
+        "question": "Kino kechasi qaysi kun bo'lsin?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_pizza",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.47,
+      "text": "",
+      "args": {
+        "is_anonymous": true,
+        "options": [
+          "Ha",
+          "Yo'q"
+        ],
+        "question": "Bugun pitsa buyurtma qilamizmi?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_rating",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.51,
+      "text": "",
+      "args": {
+        "is_anonymous": true,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "question": "Tadbir qanday o'tdi?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_anon_multi",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.62,
+      "text": "",
+      "args": {
+        "allows_multiple_answers": true,
+        "is_anonymous": true,
+        "options": [
+          "O'zbek",
+          "Rus",
+          "Ingliz",
+          "Turk"
+        ],
+        "question": "Qaysi tillarni bilasiz?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_quiz2",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.44,
+      "text": "",
+      "args": {
+        "correct_option_id": 1,
+        "options": [
+          "3",
+          "4",
+          "5"
+        ],
+        "question": "2+2 nechiga teng?",
+        "type": "quiz"
+      }
+    },
+    {
+      "case": "uzx_mixed_ru",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.37,
+      "text": "",
+      "args": {
+        "options": [
+          "Kofe",
+          "Choy"
+        ],
+        "question": "Kofe yoki choy?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_cities",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.55,
+      "text": "",
+      "args": {
+        "options": [
+          "Samarqand",
+          "Buxoro",
+          "Xiva",
+          "Nukus",
+          "Farg'ona"
+        ],
+        "question": "Qaysi shaharga sayohat qilamiz?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_edit_q",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.37,
+      "text": "",
+      "args": {
+        "action": "change_question",
+        "poll_id": "last",
+        "value": "Eng yaxshi film qaysi?"
+      }
+    },
+    {
+      "case": "uzx_edit_remove",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.33,
+      "text": "",
+      "args": {
+        "action": "remove_option",
+        "poll_id": "last",
+        "value": "banan"
+      }
+    },
+    {
+      "case": "uzx_edit_close",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.27,
+      "text": "",
+      "args": {
+        "action": "close",
+        "poll_id": "last"
+      }
+    },
+    {
+      "case": "uzx_edit_add",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.33,
+      "text": "",
+      "args": {
+        "action": "add_option",
+        "poll_id": "last",
+        "value": "Farqi yo'q"
+      }
+    },
+    {
+      "case": "uzx_gen_result",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.87,
+      "text": "Kechagi so'rovnoma natijalari haqida ma'lumot ololmayapman, chunki men hozircha faqat yangi so'rovnomalar yaratish va mavjudlarini tahrirlash funksiyasiga egaman. So'rovnoma natijalarini ko'rish imkon",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_opinion",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 3.72,
+      "text": "Mening fikrimcha, so'rovnomalar juda foydali vositadir, ayniqsa guruhlarda yoki loyihalarda qaror qabul qilish kerak bo'lganda. Ularning bir qancha afzalliklari bor:\n\n1.  **Demokratik qaror qabul qili",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_history",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.76,
+      "text": "Amir Temur 1336-yilda tug'ilgan. Uning tug'ilgan joyi haqiqiyda aniq ma'lum bo'lmasa-da, ko'pincha Shahrisabz shahri bilan bog'lanadi.",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_math",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.49,
+      "text": "150 sonining 20 fozi **30** bo'ladi.\n\nBuni hisoblash usuli:\n$150 \\times 0.20 = 30$",
+      "args": null
+    }
+  ],
+  "qwen3.5-2b": [
+    {
+      "case": "uzx_movie",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 2.97,
+      "text": "",
+      "args": {
+        "question": "Kino kechasi qaysi kun bo'lsin?",
+        "options": [
+          "Juma",
+          "Shanba",
+          "Yakshanba"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uzx_pizza",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.36,
+      "text": "",
+      "args": {
+        "question": "Bugun pitsa buyurtma qilamizmi?",
+        "options": [
+          "Ha",
+          "Yo'q"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uzx_rating",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.37,
+      "text": "",
+      "args": {
+        "question": "Tadbir qanday o'tdi?",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uzx_anon_multi",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.53,
+      "text": "",
+      "args": {
+        "question": "Qaysi tillarni bilasiz?",
+        "options": [
+          "O'zbek",
+          "Rus",
+          "Ingliz",
+          "Turk"
+        ],
+        "is_anonymous": true,
+        "allows_multiple_answers": true,
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uzx_quiz2",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.52,
+      "text": "",
+      "args": {
+        "question": "2+2 nechiga teng?",
+        "options": [
+          "3",
+          "4",
+          "5"
+        ],
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "type": "quiz",
+        "correct_option_id": 1
+      }
+    },
+    {
+      "case": "uzx_mixed_ru",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.3,
+      "text": "",
+      "args": {
+        "question": "Kofe yoki choy?",
+        "options": [
+          "Kofe",
+          "Choy"
+        ]
+      }
+    },
+    {
+      "case": "uzx_cities",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.44,
+      "text": "",
+      "args": {
+        "question": "Qaysi shaharga sayohat qilamiz?",
+        "options": [
+          "Samarqand",
+          "Buxoro",
+          "Xiva",
+          "Nukus",
+          "Farg'ona"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uzx_edit_q",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.38,
+      "text": "Keling, savolni o'zgartirish uchun `edit_poll` funksiyasidan foydalanamiz.\n\n",
+      "args": {
+        "action": "change_question",
+        "value": "Eng yaxshi film qaysi?"
+      }
+    },
+    {
+      "case": "uzx_edit_remove",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": null,
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.36,
+      "text": "Men sizning so'rovingizga javob berishim mumkin, lekin men hozircha qaysi bir so'rovnomadan (poll) so'rovnomadan 'banan' variantini olib tashlashni xohlayapsiz?\n\nQaysi bir so'rovnomani tanlaysiz?",
+      "args": null
+    },
+    {
+      "case": "uzx_edit_close",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.16,
+      "text": "",
+      "args": {
+        "action": "close"
+      }
+    },
+    {
+      "case": "uzx_edit_add",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "create_poll",
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 1.16,
+      "text": "Men sizning so'rovnomangizni to'g'ridan-to'g'ri yaratib olaman.\n\nMening so'rovnomangiz:\n**\"Qaysi xalqaro taniqli kompaniya eng yaxshi texnologiyalar va innovatsiyalar bilan mashhur?\"**\n\nVariantlar:\n1.",
+      "args": {
+        "question": "Qaysi xalqaro taniqli kompaniya eng yaxshi texnologiyalar va innovatsiyalar bilan mashhur?",
+        "options": [
+          "Apple",
+          "Microsoft",
+          "Google",
+          "Amazon",
+          "Meta (Facebook)",
+          "Tesla",
+          "Samsung",
+          "Huawei",
+          "Alibaba",
+          "Xiaomi"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uzx_gen_result",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.59,
+      "text": "Men sizga kecha so'rovnoma natijalarini taqdim etib bera olaman.\n\nAgar sizning so'rovnoma bo'lishini bilib yubormoqchimisiz, yoki sizning so'rovnoma bo'lishini bilib yubormoqchimisiz, yoki qanday nati",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_opinion",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 2.35,
+      "text": "Men sizning so'rovingizga javob beraman.\n\nSo'rovnomalar (polls) odatda quyidagi foydalarini beradi:\n\n1.  **Maktaba va kutubxona:** O'quvchilarga yoki kutubxonaga qo'shilganlarga qo'shimcha ma'lumotlar",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_history",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.14,
+      "text": "Amir Temur 1994-yil 24-mayda tug'ilgan.",
+      "args": null
+    },
+    {
+      "case": "uzx_gen_math",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.36,
+      "text": "150 sonining 20 foizi quyidagicha hisoblanadi:\n\n$$150 \\times 0.20 = 30$$\n\nYoki:\n$$150 \\times \\frac{20}{100} = 30$$\n\nJavob: **30**.",
+      "args": null
+    }
+  ]
+}

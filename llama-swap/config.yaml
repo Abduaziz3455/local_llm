@@ -44,3 +44,13 @@ models:
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health
     ttl: 300
+
+  # Qwen3.5-2B (dense, tiny) — dedicated tool-calling model. The "qwen2b"
+  # profile in start-llama.sh loads the Q8_0 quant from the HF cache. Used to
+  # test the "small model does tool calls, Gemma answers general questions"
+  # split. Loads fast; llama-swap unloads the other model on swap.
+  "qwen3.5-2b":
+    cmd: sh /llama-swap/start-llama.sh ${PORT} qwen2b
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300

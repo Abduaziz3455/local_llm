@@ -22,7 +22,9 @@ from bot.db import Database
 from bot.engine import safe_edit, stream_reply
 from bot.generation import GenerationManager
 from bot.images import ImagePart, user_message
+from bot.llama import LlamaClient
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
+from bot.polls import maybe_handle_poll
 from bot.prompts import system_prompt
 from bot.routing import model_id, route
 
@@ -64,12 +66,17 @@ async def _answer(
     client: OpenWebUIClient,
     config: Config,
     images: list[ImagePart] | None = None,
+    llama: LlamaClient | None = None,
 ) -> None:
     """Route a question, run the model, stream the reply, and save history.
 
     ``images`` is an optional list of ``(raw_bytes, mime_type)`` pairs; when
     present the user turn is built as multimodal content so the vision model
     sees the picture(s) alongside the text.
+
+    When ``llama`` is given and the message has no image, a poll tool-call is
+    attempted first: if the model decides to create or close a poll, that is
+    executed and the normal chat answer is skipped.
     """
     chat_id = message.chat.id
     settings = await db.get_settings(chat_id)
@@ -80,6 +87,22 @@ async def _answer(
 
     model = model_id(routed.mode, config.model_fast, config.model_thinking)
     history = await db.get_history(chat_id, config.history_turns)
+
+    # Tool-calling path: poll create/close (DM-only). Runs first; the cheap
+    # keyword pre-filter inside maybe_handle_poll means ordinary chat pays no
+    # extra latency. Images (an attached/replied menu) and recent history are
+    # passed so the model can extract poll options from a picture or context.
+    if llama is not None and config.polls_enabled and routed.text:
+        confirmation = await maybe_handle_poll(
+            message, routed.text, bot=bot, db=db, llama=llama,
+            model=config.poll_model, images=images, history=history,
+        )
+        if confirmation is not None:
+            await message.answer(confirmation)
+            await db.add_message(chat_id, "user", routed.text)
+            await db.add_message(chat_id, "assistant", confirmation)
+            return
+
     conversation = [
         system_prompt(),
         *history,
@@ -112,12 +135,14 @@ async def handle_text(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
     gen: GenerationManager,
 ) -> None:
     gen.run(
         message.chat.id,
-        _answer_text(message, bot=bot, db=db, client=client, config=config),
+        _answer_text(message, bot=bot, db=db, client=client, llama=llama,
+                     config=config),
     )
 
 
@@ -127,6 +152,7 @@ async def _answer_text(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
 ) -> None:
     """Answer a text message, pulling in any image it replies to."""
@@ -137,7 +163,7 @@ async def _answer_text(
         return
     await _answer(
         message, message.text or "", bot=bot, db=db, client=client,
-        config=config, images=images,
+        config=config, images=images, llama=llama,
     )
 
 
@@ -168,6 +194,7 @@ async def handle_document(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
     gen: GenerationManager,
 ) -> None:
@@ -177,7 +204,8 @@ async def handle_document(
         return
     gen.run(
         message.chat.id,
-        _process_document(message, bot=bot, db=db, client=client, config=config),
+        _process_document(message, bot=bot, db=db, client=client, llama=llama,
+                          config=config),
     )
 
 
@@ -187,6 +215,7 @@ async def _process_document(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
 ) -> None:
     """Either feed an image-document to the vision model, or upload a document
@@ -205,7 +234,7 @@ async def _process_document(
             return
         await _answer(
             message, message.caption or "", bot=bot, db=db, client=client,
-            config=config, images=[(content, mime)],
+            config=config, images=[(content, mime)], llama=llama,
         )
         return
 
@@ -231,7 +260,8 @@ async def _process_document(
     # A caption on the document is treated as the first question about it.
     if message.caption:
         await _answer(
-            message, message.caption, bot=bot, db=db, client=client, config=config
+            message, message.caption, bot=bot, db=db, client=client,
+            config=config, llama=llama,
         )
 
 
@@ -241,6 +271,7 @@ async def handle_audio(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
     gen: GenerationManager,
 ) -> None:
@@ -252,7 +283,8 @@ async def handle_audio(
         return
     gen.run(
         message.chat.id,
-        _process_audio(message, bot=bot, db=db, client=client, config=config),
+        _process_audio(message, bot=bot, db=db, client=client, llama=llama,
+                       config=config),
     )
 
 
@@ -262,6 +294,7 @@ async def _process_audio(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
 ) -> None:
     """Transcribe a voice message / audio file, then answer it as a question."""
@@ -288,7 +321,8 @@ async def _process_audio(
 
     await safe_edit(status_msg, f"🎙️ {transcript}")
     await _answer(
-        message, transcript, bot=bot, db=db, client=client, config=config
+        message, transcript, bot=bot, db=db, client=client, config=config,
+        llama=llama,
     )
 
 
@@ -298,6 +332,7 @@ async def handle_photo(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
     gen: GenerationManager,
 ) -> None:
@@ -308,7 +343,8 @@ async def handle_photo(
         return
     gen.run(
         message.chat.id,
-        _answer_photo(message, bot=bot, db=db, client=client, config=config),
+        _answer_photo(message, bot=bot, db=db, client=client, llama=llama,
+                      config=config),
     )
 
 
@@ -318,12 +354,14 @@ async def _answer_photo(
     bot: Bot,
     db: Database,
     client: OpenWebUIClient,
+    llama: LlamaClient,
     config: Config,
 ) -> None:
     """Send a photo to the multimodal model for image understanding.
 
     Any caption is used as the question; without one the model is simply
-    asked to describe the picture.
+    asked to describe the picture. A poll-related caption (e.g. "create a poll
+    from this menu") routes through the poll tool path, which can read the image.
     """
     try:
         content = await _download(bot, message.photo[-1])
@@ -333,7 +371,7 @@ async def _answer_photo(
     # Telegram always re-encodes photos as JPEG.
     await _answer(
         message, message.caption or "", bot=bot, db=db, client=client,
-        config=config, images=[(content, "image/jpeg")],
+        config=config, images=[(content, "image/jpeg")], llama=llama,
     )
 
 

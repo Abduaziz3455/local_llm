@@ -21,6 +21,7 @@ from bot.config import load_config
 from bot.db import Database
 from bot.generation import GenerationManager
 from bot.handlers import commands, dm, guest, tools
+from bot.llama import LlamaClient
 from bot.middleware import AdminOnlyMiddleware, ThrottlingMiddleware
 from bot.openwebui import OpenWebUIClient, OpenWebUIError
 
@@ -82,6 +83,13 @@ async def main() -> None:
     await db.connect()
     client = OpenWebUIClient(
         config.openwebui_url, config.openwebui_api_key, config.request_timeout
+    )
+    # Direct llama-swap client for tool calling (the poll feature). Open WebUI
+    # doesn't forward OpenAI tools cleanly, so poll decisions go straight here.
+    # Generous timeout: a cold model load plus vision (menu-image → poll) can
+    # take a while on first use.
+    llama = LlamaClient(
+        config.llama_url, config.llama_api_key, timeout=config.request_timeout
     )
     # Tracks the in-flight generation per chat so /stop and follow-up
     # questions can cancel a reply that's still streaming.
@@ -148,6 +156,7 @@ async def main() -> None:
             bot,
             db=db,
             client=client,
+            llama=llama,
             config=config,
             gen=gen,
             bot_username=me.username,
@@ -157,6 +166,7 @@ async def main() -> None:
         heartbeat.cancel()
         await db.close()
         await client.aclose()
+        await llama.aclose()
         await bot.session.close()
         log.info("Bot stopped.")
 

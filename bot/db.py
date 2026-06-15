@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS chat_files (
     ts       REAL    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_chat_files ON chat_files(chat_id, ts);
+
+CREATE TABLE IF NOT EXISTS chat_polls (
+    chat_id    INTEGER NOT NULL,           -- chat the poll was sent to
+    message_id INTEGER NOT NULL,           -- Telegram message id (for stop_poll)
+    poll_id    TEXT    NOT NULL,           -- Telegram poll id
+    question   TEXT    NOT NULL,
+    closed     INTEGER NOT NULL DEFAULT 0, -- 1 once stopped
+    ts         REAL    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_polls ON chat_polls(chat_id, ts);
 """
 
 
@@ -193,5 +203,35 @@ class Database:
     async def clear_files(self, chat_id: int) -> None:
         await self._conn.execute(
             "DELETE FROM chat_files WHERE chat_id = ?", (chat_id,)
+        )
+        await self._conn.commit()
+
+    # --- polls ---------------------------------------------------------------
+
+    async def record_poll(
+        self, chat_id: int, message_id: int, poll_id: str, question: str
+    ) -> None:
+        """Remember a poll the bot just sent, so it can be closed later."""
+        await self._conn.execute(
+            "INSERT INTO chat_polls (chat_id, message_id, poll_id, question, ts) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (chat_id, message_id, poll_id, question, time.time()),
+        )
+        await self._conn.commit()
+
+    async def get_last_open_poll(self, chat_id: int) -> tuple[int, str] | None:
+        """Return ``(message_id, poll_id)`` of the chat's newest open poll, or None."""
+        async with self._conn.execute(
+            "SELECT message_id, poll_id FROM chat_polls "
+            "WHERE chat_id = ? AND closed = 0 ORDER BY ts DESC LIMIT 1",
+            (chat_id,),
+        ) as cur:
+            row = await cur.fetchone()
+        return (row[0], row[1]) if row else None
+
+    async def mark_poll_closed(self, chat_id: int, message_id: int) -> None:
+        await self._conn.execute(
+            "UPDATE chat_polls SET closed = 1 WHERE chat_id = ? AND message_id = ?",
+            (chat_id, message_id),
         )
         await self._conn.commit()

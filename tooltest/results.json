@@ -1,0 +1,796 @@
+{
+  "gemma-4-12b": [
+    {
+      "case": "en_simple",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 5,
+      "args_total": 5,
+      "latency": 5.3,
+      "text": "",
+      "args": {
+        "options": [
+          "Python",
+          "Go",
+          "Rust",
+          "JavaScript"
+        ],
+        "question": "What's your favorite programming language?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "en_anon",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.45,
+      "text": "",
+      "args": {
+        "is_anonymous": true,
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "question": "Will you join tomorrow's meeting?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "en_multi",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.57,
+      "text": "",
+      "args": {
+        "allows_multiple_answers": true,
+        "is_anonymous": true,
+        "options": [
+          "apple",
+          "banana",
+          "grape",
+          "peach"
+        ],
+        "question": "Which fruits do you like? (Select all that apply)",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "en_quiz",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.5,
+      "text": "",
+      "args": {
+        "correct_option_id": 0,
+        "options": [
+          "Tashkent",
+          "Samarkand",
+          "Bukhara"
+        ],
+        "question": "What is the capital of Uzbekistan?",
+        "type": "quiz"
+      }
+    },
+    {
+      "case": "en_no_options",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.47,
+      "text": "",
+      "args": {
+        "options": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday"
+        ],
+        "question": "Which day works best for the team standup?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "en_edit_add",
+      "lang": "en",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.29,
+      "text": "",
+      "args": {
+        "action": "add_option",
+        "poll_id": "last",
+        "value": "Maybe"
+      }
+    },
+    {
+      "case": "en_edit_close",
+      "lang": "en",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.3,
+      "text": "",
+      "args": {
+        "action": "close",
+        "poll_id": "last"
+      }
+    },
+    {
+      "case": "en_gen_capital",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.16,
+      "text": "The capital of Uzbekistan is Tashkent.",
+      "args": null
+    },
+    {
+      "case": "en_gen_chat",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.34,
+      "text": "A poll is a method of gathering opinions, preferences, or data from a specific group of people by asking them a set of questions.",
+      "args": null
+    },
+    {
+      "case": "en_gen_code",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 3.61,
+      "text": "To sort a list of numbers in Python, you can use two primary methods depending on whether you want to modify the original list or create a new one.\n\n### 1. Using `.sort()` (Modifies the original list)",
+      "args": null
+    },
+    {
+      "case": "uz_simple",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.5,
+      "text": "",
+      "args": {
+        "options": [
+          "qizil",
+          "ko'k",
+          "yashil",
+          "sariq"
+        ],
+        "question": "Sevimli rangingiz qaysi?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uz_anon",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.47,
+      "text": "",
+      "args": {
+        "is_anonymous": true,
+        "options": [
+          "Ha",
+          "Yo'q"
+        ],
+        "question": "Ertaga uchrashuvga kelasizmi?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uz_multi",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.54,
+      "text": "",
+      "args": {
+        "allows_multiple_answers": true,
+        "is_anonymous": true,
+        "options": [
+          "olma",
+          "banan",
+          "uzum",
+          "shaftoli"
+        ],
+        "question": "Qaysi mevalarni yoqtirasiz?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uz_quiz",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.57,
+      "text": "",
+      "args": {
+        "correct_option_id": 0,
+        "options": [
+          "Toshkent",
+          "Samarqand",
+          "Buxoro"
+        ],
+        "question": "O'zbekiston poytaxti qaysi shahar?",
+        "type": "quiz"
+      }
+    },
+    {
+      "case": "uz_meeting",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.59,
+      "text": "",
+      "args": {
+        "options": [
+          "9:00",
+          "10:00",
+          "11:00"
+        ],
+        "question": "Dushanba yig'ilishi soat nechada bo'lsin?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uz_food",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.6,
+      "text": "",
+      "args": {
+        "options": [
+          "osh",
+          "lag'mon",
+          "manti",
+          "somsa"
+        ],
+        "question": "Tushlik uchun nima yeyishni xohlaysiz?",
+        "type": "regular"
+      }
+    },
+    {
+      "case": "uz_edit_add",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.33,
+      "text": "",
+      "args": {
+        "action": "add_option",
+        "poll_id": "last",
+        "value": "Bilmayman"
+      }
+    },
+    {
+      "case": "uz_edit_close",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "edit_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.25,
+      "text": "",
+      "args": {
+        "action": "close",
+        "poll_id": "last"
+      }
+    },
+    {
+      "case": "uz_gen_capital",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.25,
+      "text": "O'zbekiston poytaxti — Toshkent shahri.",
+      "args": null
+    },
+    {
+      "case": "uz_gen_weather",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.33,
+      "text": "Salom! Rahmat, kayfiyatim juda yaxshi. Sizga qanday yordam bera olaman?",
+      "args": null
+    },
+    {
+      "case": "uz_gen_explain",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.71,
+      "text": "So'rovnoma — bu ma'lum bir mavzu bo'yicha odamlarning fikrlarini, xohishlarini yoki ma'lumotlarini yig'ish uchun tuzilgan savollar to'plamidir.",
+      "args": null
+    },
+    {
+      "case": "uz_gen_recipe",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 4.02,
+      "text": "Osh tayyorlash jarayoni qisqacha quyidagicha:\n\n1.  **Masloh (Yog'ing) tayyorlash:** Qozonga yog' solib qizitiladi va unda go'sht (mol yoki qo'y) qizartiriladi.\n2.  **Sabzi qo'shish:** Go'sht biroz qiz",
+      "args": null
+    }
+  ],
+  "qwen3.5-2b": [
+    {
+      "case": "en_simple",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 5,
+      "args_total": 5,
+      "latency": 2.84,
+      "text": "",
+      "args": {
+        "question": "What's your favorite programming language?",
+        "options": [
+          "Python",
+          "Go",
+          "Rust",
+          "JavaScript"
+        ]
+      }
+    },
+    {
+      "case": "en_anon",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.32,
+      "text": "",
+      "args": {
+        "question": "Will you join tomorrow's meeting?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "en_multi",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.37,
+      "text": "",
+      "args": {
+        "question": "What fruits do you like the most?",
+        "options": [
+          "apple",
+          "banana",
+          "grape",
+          "peach"
+        ],
+        "allows_multiple_answers": true
+      }
+    },
+    {
+      "case": "en_quiz",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.49,
+      "text": "",
+      "args": {
+        "question": "What is the capital of Uzbekistan?",
+        "options": [
+          "Tashkent",
+          "Samarkand",
+          "Bukhara"
+        ],
+        "type": "quiz",
+        "correct_option_id": 0,
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "en_no_options",
+      "lang": "en",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.4,
+      "text": "",
+      "args": {
+        "question": "Which day works best for the standup?",
+        "options": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "en_edit_add",
+      "lang": "en",
+      "expect": "edit_poll",
+      "got": null,
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.24,
+      "text": "I don't know which poll you're referring to, so I can't add the 'Maybe' option yet. Could you please provide the poll ID (or the name of the poll) so I can help you with that?",
+      "args": null
+    },
+    {
+      "case": "en_edit_close",
+      "lang": "en",
+      "expect": "edit_poll",
+      "got": null,
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.17,
+      "text": "I don't see any poll currently active in the chat. Could you please provide the poll ID or the name of the poll you'd like to close?",
+      "args": null
+    },
+    {
+      "case": "en_gen_capital",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.08,
+      "text": "The capital of Uzbekistan is **Tashkent**.",
+      "args": null
+    },
+    {
+      "case": "en_gen_chat",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.13,
+      "text": "A poll is a survey or question-and-answer tool used to gather opinions or votes from a group of people.",
+      "args": null
+    },
+    {
+      "case": "en_gen_code",
+      "lang": "en",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.96,
+      "text": "To sort a list of numbers in Python, you can use the built-in `sorted()` function or the `list.sort()` method.\n\nHere are the two most common ways to do it:\n\n**1. Using `sorted()` (returns a new sorted",
+      "args": null
+    },
+    {
+      "case": "uz_simple",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.32,
+      "text": "",
+      "args": {
+        "question": "Sevimli rangningiz qaysi?",
+        "options": [
+          "qizil",
+          "ko'k",
+          "yashil",
+          "sariq"
+        ]
+      }
+    },
+    {
+      "case": "uz_anon",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.39,
+      "text": "",
+      "args": {
+        "question": "Ertaga uchrashuvga kelasizmi?",
+        "options": [
+          "Ha",
+          "Yo'q"
+        ],
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uz_multi",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 2,
+      "args_total": 2,
+      "latency": 0.51,
+      "text": "",
+      "args": {
+        "question": "Qaysi mevalarni yoqtirasiz?",
+        "options": [
+          "Olma",
+          "Banan",
+          "Uzum",
+          "Shahtoli"
+        ],
+        "allows_multiple_answers": true,
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uz_quiz",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": false,
+      "args_passed": 2,
+      "args_total": 3,
+      "latency": 0.47,
+      "text": "",
+      "args": {
+        "question": "O'zbekiston poytaxti qaysi shahar?",
+        "options": [
+          "Toshkent",
+          "Samarqand",
+          "Buxoro"
+        ],
+        "correct_option_id": 0,
+        "is_anonymous": true
+      }
+    },
+    {
+      "case": "uz_meeting",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 1,
+      "args_total": 1,
+      "latency": 0.37,
+      "text": "",
+      "args": {
+        "question": "Dushanba yig'ilishi qayerda bo'lishi kerak?",
+        "options": [
+          "9:00",
+          "10:00",
+          "11:00"
+        ]
+      }
+    },
+    {
+      "case": "uz_food",
+      "lang": "uz",
+      "expect": "create_poll",
+      "got": "create_poll",
+      "routing_ok": true,
+      "args_ok": true,
+      "args_passed": 3,
+      "args_total": 3,
+      "latency": 0.34,
+      "text": "",
+      "args": {
+        "question": "Tushlik uchun ovoz berish so'rovnomasi",
+        "options": [
+          "Osh",
+          "Lag'mon",
+          "Manti",
+          "Somsa"
+        ]
+      }
+    },
+    {
+      "case": "uz_edit_add",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": "create_poll",
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.29,
+      "text": "",
+      "args": {
+        "question": "Qanday variantni tanlaysiz?",
+        "options": [
+          "Bilmayman",
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "case": "uz_edit_close",
+      "lang": "uz",
+      "expect": "edit_poll",
+      "got": null,
+      "routing_ok": false,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.55,
+      "text": "Siz qanday so'rovni (so'roq) yozishni xohlaysiz?\n\nMasalan: \"Qaysi kishi eng yaxshi?\" yoki \"Qaysi yoshdagi o'quvchilar eng yaxshi?\" kabi savollar.\n\nYoki agar sizga qanday qilib ovoz berishni so'ralgan ",
+      "args": null
+    },
+    {
+      "case": "uz_gen_capital",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.09,
+      "text": "O'zbekiston poytaxti Toshkent shahri.",
+      "args": null
+    },
+    {
+      "case": "uz_gen_weather",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.11,
+      "text": "Salom! Men sizga qanday yordam bera olaman?",
+      "args": null
+    },
+    {
+      "case": "uz_gen_explain",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 1.08,
+      "text": "Ha, so'rovnoma (poll) nima ekanligini bir gapda tushuntirib beraman.\n\nSo'rovnoma — bu o'zgaruvchilar (qo'shimchalar) o'rtasida o'zaro bog'lanishni ta'minlash uchun yaratilgan qo'shimcha. Ushbu qo'shim",
+      "args": null
+    },
+    {
+      "case": "uz_gen_recipe",
+      "lang": "uz",
+      "expect": null,
+      "got": null,
+      "routing_ok": true,
+      "args_ok": null,
+      "args_passed": 0,
+      "args_total": 0,
+      "latency": 0.26,
+      "text": "Oshni qanday tayyorlashni bilmoqchisiz? Siz qanday osh olishni xohlaysiz (masalan, qizil, oq, yoki oq va qizil)?",
+      "args": null
+    }
+  ]
+}

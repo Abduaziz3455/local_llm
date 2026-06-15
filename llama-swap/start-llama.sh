@@ -36,6 +36,13 @@ case "$PROFILE" in
     QUANT="UD-Q4_K_XL"
     HF_FALLBACK="unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL"
     ;;
+  qwen2b)
+    # Small Qwen3.5-2B used as a dedicated TOOL-CALLING model (tiny, fast).
+    # Q8_0 (~2.5 GB) chosen for max tool-call reliability on a 2B model.
+    REPO="models--unsloth--Qwen3.5-2B-GGUF"
+    QUANT="Q8_0"
+    HF_FALLBACK="unsloth/Qwen3.5-2B-GGUF:Q8_0"
+    ;;
   qwen|*)
     REPO="${MODEL_REPO:-models--unsloth--Qwen3.6-35B-A3B-GGUF}"
     QUANT="${QUANT:-}"
@@ -99,6 +106,23 @@ case "$PROFILE" in
       --jinja \
       --chat-template-kwargs '{"enable_thinking":false}' \
       --temp 1.0 --top-p 0.95 --top-k 64
+    ;;
+  qwen2b)
+    # Qwen3.5-2B (dense) — fits the 12 GB GPU fully (-ngl 99). Used purely as a
+    # tool-calling model. --jinja enables the chat template's tool-call grammar;
+    # thinking disabled for fast, deterministic tool decisions. Qwen-recommended
+    # non-thinking sampling: temp 0.7, top-p 0.8, top-k 20, min-p 0.
+    exec llama-server \
+      "$@" \
+      --host 127.0.0.1 --port "$PORT" \
+      --alias qwen3.5-2b \
+      --api-key local \
+      -c 8192 \
+      -ngl 99 \
+      -fa on \
+      --jinja \
+      --chat-template-kwargs '{"enable_thinking":false}' \
+      --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0
     ;;
   qwen|*)
     # Original Qwen3.6-35B-A3B (MoE) behaviour — experts offloaded to CPU RAM.

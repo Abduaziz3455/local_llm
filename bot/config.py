@@ -55,6 +55,11 @@ class Config:
     response_timeout: float     # seconds — hard cap on one generation (anti-runaway)
     file_ttl_hours: float       # how long an uploaded doc stays attached for RAG
     max_stored_messages: int    # cap on stored messages per chat (older ones pruned)
+    # --- tool calling (poll feature) ---
+    llama_url: str              # llama-swap OpenAI endpoint, e.g. http://llama:8080/v1
+    llama_api_key: str          # llama-swap --api-key (default "local")
+    poll_model: str             # model id used for poll tool-calling decisions
+    polls_enabled: bool         # master switch for the poll feature
 
 
 def load_config() -> Config:
@@ -71,4 +76,9 @@ def load_config() -> Config:
         response_timeout=float(os.getenv("RESPONSE_TIMEOUT", "120")),
         file_ttl_hours=float(os.getenv("FILE_TTL_HOURS", "24")),
         max_stored_messages=int(os.getenv("MAX_STORED_MESSAGES", "200")),
+        llama_url=os.getenv("LLAMA_URL", "http://llama:8080/v1").rstrip("/"),
+        llama_api_key=os.getenv("LLAMA_API_KEY", "local").strip(),
+        poll_model=os.getenv("POLL_MODEL", "gemma-4-12b").strip(),
+        polls_enabled=os.getenv("POLLS_ENABLED", "true").strip().lower()
+        not in ("0", "false", "no", ""),
     )
